@@ -1,99 +1,162 @@
+---
+sidebar_label: 'Installation'
+title: SAPBO Connector installation
+description: "Steps to install and configure the SAP Business Objects Connector, including required software levels, the Windows Agent prerequisite, the SAPBOPath global property, the Enterprise Manager job subtype plug-in, and Connector.config settings."
+tags:
+  - Procedural
+  - System Administrator
+  - SAPBO Connector
+---
+
 # Installation
 
-The SAP Business Objects Connector installation consists of multiple steps that are required to complete the installation successfully. This consists of installing a 
-Windows Agent, the SAP Business Objects Connector, configuring the SAP Business Objects connector and installing the SAP Business Objects Windows job subtype. 
+## What is it?
 
-It should be noted that the SAP Business Objects connector requires a Windows Agent as it executes as a Windows batch job. 
-It can be installed on a central server or an agent can be installed on the SAP Business Objects server.
+The SAP Business Objects Connector installation consists of multiple steps that are required to complete the installation successfully. The steps install a Windows Agent, the SAP Business Objects Connector, and the SAP Business Objects Windows job subtype, and then configure the connector.
 
-## Supported Software Levels
-The following software levels are required to implement the SAP Business Objects Connector.
+:::note
+The SAP Business Objects Connector requires a Windows Agent because it runs as a Windows batch job. You can install the connector on a central server, or you can install an agent on the SAP Business Objects server.
+:::
 
-- OpCon Release 19.0 or higher.
-- Embedded Java OpenJDK 11 (part of installation).
-- SAP Business Objects 4.2.
+## Supported software levels
 
-## Installation
-The installation process consists of the following steps:
+The following software levels are required to implement the SAP Business Objects Connector:
 
-- OpCon Windows Agent Installation.
-- SAP BUsiness Objects Connector Installation.
-- Adding SAP BUsiness Objects Connector job subtype to Enterprise Manager.
-- SAP Business Objects Connector Configuration.
- 
-### OpCon Windows Agent Installation
-The SAP Business Objects Connector requires a SMA OpCon Windows Agent. The Agent can be installed either on the SAM Server or on the same system as the SAP Central Management Console server.
+- OpCon Release 19.0 or higher
+- Embedded Java OpenJDK 11 (part of the installation)
+- SAP Business Objects 4.2
 
-### SAP Business Objects Connector Installation
+## Installation overview
 
-Copy the supplied install file SAPBOConnector-win.zip and extract it into the installation directory.
+The installation process consists of four steps, performed in order:
 
-After the extraction, the root installation directory contains the connector executable (boxi.exe), the encryption software (Encrypt.exe), the Connector.config file and two directories, 
-java and emplugins. The java directory contains the java software required to execute the connector (OpenJDK 11) and the emplugins directory contains the job sub-type plugin for Enterprise Manager.
+1. Install the OpCon Windows Agent.
+2. Install the SAP Business Objects Connector.
+3. Add the SAP Business Objects Connector job subtype to Enterprise Manager.
+4. Configure the SAP Business Objects Connector.
 
-### Create SAPBOPath Global Property
+### Step 1 — OpCon Windows Agent installation
+
+The SAP Business Objects Connector requires an SMA OpCon Windows Agent. You can install the Agent on either of the following:
+
+- The SAM Server.
+- The same system as the SAP Central Management Console server.
+
+### Step 2 — SAP Business Objects Connector installation
+
+To install the connector, complete the following steps:
+
+1. Copy the supplied install file `SAPBOConnector-win.zip` to the installation directory.
+2. Extract the contents into the installation directory.
+
+After extraction, the root installation directory contains the following:
+
+| Item | Purpose |
+| ---- | ------- |
+| `boxi.exe` | Connector executable |
+| `Encrypt.exe` | Encryption utility for passwords stored in `Connector.config` |
+| `Connector.config` | Connector configuration file |
+| `java\` directory | Embedded Java software (OpenJDK 11) required to run the connector |
+| `emplugins\` directory | Job subtype plug-in for Enterprise Manager |
+
+### Step 3 — Create the SAPBOPath global property
+
 Create a global property **SAPBOPath** that contains the full path of the installation directory.
 
-### Job Subtype Installation
-Copy the Enterprise Manager plug-in from the ***installation_dir***\\emplugins directory to the dropins directory of the Enterprise Manager installation. 
+:::tip
+The **Connector Path** field on every SAPBO job definition references this property. Setting it once means you do not need to update individual jobs if the install path ever changes.
+:::
 
-If the dropins directory does not exist, create the dropins directory off the root directory. 
+### Step 4 — Job subtype installation
 
-Restart Enterprise Manager and a new Windows job subtype called SAP Business Objects will be visible.
+To install the Enterprise Manager job subtype plug-in, complete the following steps:
 
-If not restart Enterprise Manager using 'Run as Administrator'. After this Enterprise Manager can be used normally.
+1. Copy the Enterprise Manager plug-in from the ***installation_dir***\\emplugins directory to the `dropins` directory of the Enterprise Manager installation.
+2. If the `dropins` directory does not exist, create it off the root directory.
+3. Restart Enterprise Manager.
 
-## SAP Business Objects Connector Configuration
-The configuration of the SAP Business Objects Connector requires setting the required values in the Connector.config file. The Connector.config file contains information for the SAP 
-Business Objects Connector that defines the address of the Business Objects Server that the connector uses to issue requests to Business Objects. 
+A new Windows job subtype called **SAP Business Objects** is now visible.
 
-It also includes definitions for FTP and SMTP servers. The header name of the FTP and SMTP definitions are used to extract the correct connection definitions. It is possible to define multiple connections by changing the header value (i.e. FTP1 defines the connection for server1 and FTP2 defines the connection for server2.
+:::caution
+If the new job subtype is not visible, restart Enterprise Manager using **Run as Administrator**. After this, you can use Enterprise Manager normally.
+:::
 
-Any passwords entered into the Connector.config must be encrypted using the Encrypt.exe utility provided with the connector. When executing the utility, a single argument -v is used to provide the value that must be encrypted
+## SAP Business Objects Connector configuration
 
+Configuring the SAP Business Objects Connector requires setting the required values in the `Connector.config` file. The `Connector.config` file contains the following:
 
-#### Encrypt Utility
-The Encrypt utility uses standard 64 bit encryption.
+- The address of the Business Objects Server that the connector uses to issue requests to Business Objects.
+- Definitions for FTP and SMTP servers. The header name of each FTP and SMTP definition is used to extract the correct connection definitions.
 
-Supports a -v argument and displays the encrypted value
+You can define multiple FTP or SMTP connections by changing the header value (for example, `[FTP1]` defines the connection for server1 and `[FTP2]` defines the connection for server2).
 
-On Windows, example on how to encrypt the value "abcdefg":
+:::warning
+Any passwords entered into `Connector.config` must be encrypted using the `Encrypt.exe` utility provided with the connector. Plain-text passwords are not supported.
+:::
 
-```
+### Encrypt utility
+
+The Encrypt utility uses standard 64-bit encryption. It supports a `-v` argument and displays the encrypted value.
+
+To encrypt a value on Windows, run the following command, substituting your value for `abcdefg`:
+
+```text
 Encrypt.exe -v abcdefg
-
 ```
 
-#### Connector.config configuration
-Configure the Connector.config file in the installation directory setting the required information.
-The Connector.config contains the following values
+### Connector.config configuration
 
-Property Name                              | Value
------------------------------------------- | -----------
-**[CONNECTOR]**                            | header
-**CONNECTOR_NAME**                         | The name of the connector. This value should not be changed.
-**DEBUG**                                  | If the Connector supports a debug mode, it can be used to set the connector into DEBUG mode. Value either ON or OFF (default OFF).
-**[BUSINESS OBJECTS]**                     | header 
-**BUSINESS_OBJECT_SERVER_ADDRESS**         | This defines the address of the SAPBO server. This includes the port number which is the listening port defined during SAP Business Objects installation (default 6405).
-**BUSINESS_OBJECTS_DEFAULT_REPORT_FORMAT** | This is the default report format if the attribute SCHEDULE-FORMAT is not present. Values consist of webi, pdf, xls or csv.
-**[DISK]**                                 | Header – used to define a DISK connection and contains a valid user and password that is allowed to write files on the target disk.
-**DISK_USER**                              | This defines a valid user code that has the required privileges to write onto the destination disk.
-**DISK_USER_PASSWORD**                     | This defines the password of the user. It is encrypted using the Encrpyt.exe utility.
-**[FTP]**                                  | Header – used to define a connection to a FTP Server. A FTP destination definition includes this name as the first parameter of the value definition so the correct FTP server definitions can be used (i.e. FTP=FTP1,..). It is possible to add multiple definitions by changing the header value.
-**FTP_SERVER_NAME**                        | This defines the address of the FTP server.
-**FTP_PORT_NUMBER**                        | This defines the port used by the FTP server.
-**FTP_USER**                               | This defines a valid user code that has the required privileges to login to the FTP server.
-**FTP_USER_PASSWORD**                      | This defines the password of the user. It is encrypted using the Encrpyt.exe utility.
-**[SMTP]**                                 | Header – used to define a connection to a SMTP Server. A SMTP destination definition includes this name as the first parameter of the value definition so the correct SMTP server definitions can be used (i.e. SMTP=SMTP1,..). It is possible to add multiple definitions by changing the header value.
-**SMTP_DOMAIN_NAME**                       | This defines the domain name associated with the SMTP server.
-**SMTP_SERVER_NAME**                       | This defines the address of the SMTP server.
-**SMTP_PORT_NUMBER**                       | This defines the port used by the SMTP server.
-**SMTP_USER**                              | This defines a valid user code that has the required privileges to login to the SMTP server.
-**SMTP_USER_PASSWORD**                     | This defines the password of the user. It is encrypted using the Encrpyt.exe utility.
+Configure the `Connector.config` file in the installation directory by setting the required information. The file is divided into named sections, each introduced by a header in square brackets.
 
-Example configuration file. 
+#### [CONNECTOR] section
 
-```
+| Property name | Value |
+| ------------- | ----- |
+| **CONNECTOR_NAME** | The name of the connector. This value should not be changed. |
+| **DEBUG** | If the connector supports a debug mode, you can use this property to set the connector into DEBUG mode. Value either `ON` or `OFF` (default `OFF`). |
+
+#### [BUSINESS OBJECTS] section
+
+| Property name | Value |
+| ------------- | ----- |
+| **BUSINESS_OBJECT_SERVER_ADDRESS** | Defines the address of the SAPBO server. This includes the port number, which is the listening port defined during SAP Business Objects installation (default `6405`). |
+| **BUSINESS_OBJECTS_DEFAULT_REPORT_FORMAT** | The default report format if the attribute `SCHEDULE-FORMAT` is not present. Valid values: `webi`, `pdf`, `xls`, or `csv`. |
+
+#### [DISK] section
+
+Used to define a DISK connection. Contains a valid user and password that is allowed to write files on the target disk.
+
+| Property name | Value |
+| ------------- | ----- |
+| **DISK_USER** | A valid user code that has the required privileges to write onto the destination disk. |
+| **DISK_USER_PASSWORD** | The password of the user. Encrypt this value using `Encrypt.exe`. |
+
+#### [FTP] section
+
+Used to define a connection to an FTP server. An FTP destination definition includes this name as the first parameter of the value definition so the correct FTP server definitions can be used (for example, `FTP=FTP1,..`). You can add multiple definitions by changing the header value.
+
+| Property name | Value |
+| ------------- | ----- |
+| **FTP_SERVER_NAME** | The address of the FTP server. |
+| **FTP_PORT_NUMBER** | The port used by the FTP server. |
+| **FTP_USER** | A valid user code that has the required privileges to log in to the FTP server. |
+| **FTP_USER_PASSWORD** | The password of the user. Encrypt this value using `Encrypt.exe`. |
+
+#### [SMTP] section
+
+Used to define a connection to an SMTP server. An SMTP destination definition includes this name as the first parameter of the value definition so the correct SMTP server definitions can be used (for example, `SMTP=SMTP1,..`). You can add multiple definitions by changing the header value.
+
+| Property name | Value |
+| ------------- | ----- |
+| **SMTP_DOMAIN_NAME** | The domain name associated with the SMTP server. |
+| **SMTP_SERVER_NAME** | The address of the SMTP server. |
+| **SMTP_PORT_NUMBER** | The port used by the SMTP server. |
+| **SMTP_USER** | A valid user code that has the required privileges to log in to the SMTP server. |
+| **SMTP_USER_PASSWORD** | The password of the user. Encrypt this value using `Encrypt.exe`. |
+
+### Example Connector.config file
+
+```ini
 [CONNECTOR]
 CONNECTOR_NAME=SAP Business Objects Connector
 DEBUG=ON
@@ -118,5 +181,34 @@ SMTP_SERVER_NAME=smtpserver1
 SMTP_PORT_NUMBER=25
 SMTP_USER=test
 SMTP_USER_PASSWORD=6233426a6232353463484d3d
-
 ```
+
+## FAQs
+
+**Q: Where can I install the SAP Business Objects Connector?**
+A: You can install it on a central server or on the SAP Business Objects server. The connector requires a Windows Agent on the same system because it runs as a Windows batch job.
+
+**Q: How do passwords get encrypted in `Connector.config`?**
+A: All passwords stored in `Connector.config` must be encrypted using the `Encrypt.exe` utility provided with the connector. Run `Encrypt.exe -v <value>` and place the resulting encrypted value in the configuration file.
+
+**Q: Why is the SAP Business Objects job subtype not visible in Enterprise Manager after I copy the plug-in?**
+A: Restart Enterprise Manager. If it is still not visible, restart Enterprise Manager using **Run as Administrator**.
+
+**Q: What does the SAPBOPath global property do?**
+A: It contains the full path to the connector installation directory and is referenced by job definitions through the **Connector Path** field.
+
+## Glossary
+
+> **Connector.config** — The configuration file in the connector installation directory that defines the Business Objects Server address, FTP and SMTP server connections, and connector-level settings such as DEBUG mode.
+
+> **dropins directory** — The Enterprise Manager subdirectory where the SAP Business Objects job subtype plug-in is placed so Enterprise Manager loads it on startup.
+
+> **Encrypt.exe** — The utility supplied with the connector that produces a 64-bit encrypted value for any password stored in `Connector.config`.
+
+> **SAPBOPath** — The global property that holds the full path of the SAP Business Objects Connector installation directory.
+
+## Related topics
+
+- [SAPBO Connector overview](./overview.md)
+- [Operation](./operation.md)
+- [Release notes](./release-notes.md)

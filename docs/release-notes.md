@@ -1,22 +1,29 @@
-# Release Notes SAP Business Objects 21.0.1
+---
+sidebar_label: 'Release notes'
+title: SAPBO Connector release notes
+description: "Version history and change details for the SAP Business Objects Connector, including new features, improvements, and bug fixes."
+tags:
+  - Reference
+  - System Administrator
+  - SAPBO Connector
+---
 
-## General
+# SAPBO Connector release notes
 
-The release removes log4j and replaces it with slj4j and logback.
+## 21
 
-## Migration Considerations
+### 21.0.1
 
-This release includes the new format installer where the files are extracted from the zip file into the desired directory. 
-It contains an embedded java version for connector so there is no reliance on installed Java versions.
-The connector also implements new encryption capabilities and the documentation explains how to use the new Encrypt.exe mechanism.
-The configuration file name has also been changed from Agent.config to Connector.config
+#### General
 
-### New Features
+The release removes log4j and replaces it with slf4j and logback.
 
-### Fixes
+#### Migration considerations
 
-**CONNUTIL-543**    
-                    CVE-2021-44228 adjustment removing log4j as the logging component.
-**CONNUTIL-558**    
-                    Added libraries to implement missing jaxb classes moved during Java 11 implementation  
-			
+This release includes the new format installer where the files are extracted from the zip file into the desired directory. It contains an embedded Java version for the connector, so there is no reliance on installed Java versions. The connector also implements new encryption capabilities, and the documentation explains how to use the new Encrypt.exe mechanism. The configuration file name has also been changed from Agent.config to Connector.config.
+
+#### Fixes
+
+:white_check_mark: **CONNUTIL-543**: CVE-2021-44228 adjustment removing log4j as the logging component.
+
+:white_check_mark: **CONNUTIL-558**: Added libraries to implement missing jaxb classes moved during Java 11 implementation.
