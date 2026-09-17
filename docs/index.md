@@ -1,4 +1,10 @@
 ---
+title: SAPBO Connector
+description: "Schedule SAP Business Objects reports from OpCon: installation, configuration, job definition, prompts, and destinations."
+tags:
+  - Conceptual
+  - System Administrator
+  - SAPBO Connector
 slug: '/'
 sidebar_label: 'SAPBO Connector'
 hide_table_of_contents: true

@@ -23,7 +23,7 @@ The suite contains the following applications:
 
 You can answer prompts using definitions within the OpCon job definition. This allows a single report defined within Business Objects to be used multiple times from OpCon using different parameters.
 
-When used in conjunction with OpCon Self Service, the connector allows users to start report tasks from the web by selecting answers to prompts from drop-down lists.
+When used in conjunction with OpCon Self Service, the connector allows users to start report tasks from the web by selecting answers to prompts from selection lists.
 
 ![SAP Business Objects Overview](/img/sapbo-connector-overview.png)
 
