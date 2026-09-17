@@ -51,7 +51,7 @@ The **START** job type schedules a report within the SAP Business Objects enviro
 
 | Field | Description |
 | ----- | ----------- |
-| **Report Type** | Required. The type of Business Objects report to schedule. Currently, **Crystal Reports**, **Publications**, and **Web Intelligence** reports are supported. |
+| **Report Type** | Required. The type of Business Objects report to schedule. Select **CrystalReport**, **WebIntelligence**, or **Publication** from the list. |
 | **Report ID** | Required. The ID of the Business Objects report to schedule. You can extract this information from the Business Objects system by examining the properties of the report on the Business Objects system. |
 
 :::info
@@ -155,14 +155,19 @@ The web services interface does not currently provide the capability to use a na
 
 ### SMTP
 
-The **Smtp** TAB defines SMTP destinations. The SMTP definitions are used in conjunction with a defined SMTP server in the `Connector.config` file.
+The **Smtp** TAB defines SMTP destinations. Unlike the **Ftp** TAB, the SMTP definition does not reference `Connector.config` — the subject, message and addresses you enter here are passed to SAP Business Objects, which sends the mail using its own configured mail settings.
 
 | Field | Description |
 | ----- | ----------- |
-| **Indicator** | An SMTP destination identifier. The value `SMTP1` is matched with the value of an SMTP Server definition in the `Connector.config` file (for example, `[SMTP1]`). The values associated with the `SMTP1` definition in `Connector.config` are used to define the SMTP Server. |
-| **Subject** | The information placed in the subject field of the email message. |
+| **Subject** | Required. The information placed in the subject field of the email message. See the caution below. |
 | **Message** | A message added to the email message body. If no message is submitted, the default value `Created by OpCon from SMA Solutions` is used. |
 | **Email Addresses** | The list of email addresses that receive the report. See the procedures below to add, modify, or remove an address. |
+
+:::caution
+
+Complete the **Subject** field. If you leave it empty, the whole mail destination is discarded before the report is scheduled — the job completes successfully and no email is sent, with nothing reported to indicate it.
+
+:::
 
 To manage **Email Addresses**:
 
@@ -174,27 +179,51 @@ To manage **Email Addresses**:
 
 ## Job-finished processing
 
-The **START** job type requires a Failure Criteria definition. A SAP Business Objects scheduled task has the following possible return codes:
+The **START** job type requires a Failure Criteria definition.
+
+The connector returns the HTTP status code that the SAP Business Objects RESTful web service produced. **Two codes indicate success**, and the Failure Criteria has to accept both:
 
 | Code | Status | Meaning |
 | ---- | ------ | ------- |
-| 200  | FINISHED_OK | The job has been successfully initiated. |
-| 201  | FINISHED_OK | The job has been successfully initiated. |
-| 1    | ERRORED | An exception occurred during job initiation. |
+| 200  | FINISHED_OK | The report was successfully scheduled. |
+| 201  | FINISHED_OK | The report was successfully scheduled. A schedule request normally returns this code. |
+| 1    | ERRORED | The connector could not process its job definition, or stopped on an unhandled error. No request reached Business Objects. |
 
-:::tip
-To check for a successful completion, set the Failure Criteria to **NE (Not Equal) to 200** — this is the completed-successfully (OK) code returned when using RESTful web services.
+:::caution
+
+Do not set the Failure Criteria to NE (Not Equal) to 200 on its own. A schedule request normally returns **201**, so a single not-equal-to-200 test fails jobs that succeeded.
+
+Use the **Failure Criteria** TAB to define criteria that treat **both 200 and 201** as successful. The TAB accepts more than one condition for this purpose.
+
 :::
+
+### Other return codes
+
+Because the return code is the web service's HTTP status, any error the web service reports arrives in OpCon as that status. The codes you are most likely to meet are:
+
+| Code | Meaning |
+| ---- | ------- |
+| 401  | The **User Name**, **User Password** or **CMS Authentication** value was rejected. |
+| 403  | The user was authenticated but is not permitted to schedule the report. |
+| 404  | No report exists with the given **Report ID**. |
+| 500  | The Business Objects server reported an internal error. Check the connector log and the Business Objects server log. |
 
 A returned code from SAP Business Objects of *warning* is logged and mapped to an ERRORED condition.
 
 ## Logging
 
-The default logging implemented by the connector consists of a maximum cycle of five log files. The log files contain information about the SAP Business Objects Connector and any jobs run by the SAP Business Objects Connector.
+The connector writes log files containing information about the connector and any jobs it runs, including error messages and return codes.
 
 - **Location:** ***installation_dir***\\log
-- **File names:** `sapbo.log` through `sapbo.log.5`
-- **Behavior:** Information is appended into the log files. You can view error messages and return codes in these log files.
+- **Active file:** `sapbo.log`
+- **Rolled files:** a subdirectory named for the month, with the date and an index in the file name — for example `log\\2026-09\\sapbo_2026-09-17.0.log`
+- **Behavior:** A new file starts each day, and the index increments when a file reaches 100 MB.
+
+:::caution
+
+Rolled log files are retained indefinitely. The `log` directory grows until you remove old files, so include it in whatever disk monitoring you apply to the connector host.
+
+:::
 
 ## FAQs
 
@@ -202,16 +231,16 @@ The default logging implemented by the connector consists of a maximum cycle of 
 A: No. The connector schedules reports that already exist in the SAP Business Objects environment. It does not create job definitions in the SAP Business Objects database.
 
 **Q: Which Business Objects report types are supported?**
-A: The **START** job type supports **Crystal Reports**, **Publications**, and **Web Intelligence** reports.
+A: Crystal Reports, Web Intelligence and Publications. In the **Report Type** list these appear as **CrystalReport**, **WebIntelligence** and **Publication**.
 
 **Q: Which job types support Report Attributes, Report Prompts, and Report Destinations?**
 A: These TABs are only supported for **Web Intelligence** reports.
 
 **Q: How do I check that a job finished successfully?**
-A: Set the Failure Criteria to **NE (Not Equal) to 200**. Codes 200 and 201 indicate that the job has been successfully initiated; code 1 indicates an exception occurred during job initiation.
+A: Codes 200 and 201 both mean the report was scheduled, and a schedule request normally returns 201. Define the Failure Criteria so that both are treated as successful — a single NE 200 test fails successful jobs.
 
 **Q: Where do connector log files live?**
-A: In the ***installation_dir***\\log directory, in a rotating set named `sapbo.log` through `sapbo.log.5`.
+A: The active file is ***installation_dir***\\log\\`sapbo.log`. Older files are rolled into month-named subdirectories beneath `log`, and they are retained indefinitely.
 
 ## Glossary
 

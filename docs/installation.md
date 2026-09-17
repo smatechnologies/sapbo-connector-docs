@@ -39,7 +39,7 @@ The installation process consists of four steps, performed in order:
 
 The SAP Business Objects Connector requires an SMA OpCon Windows Agent. You can install the Agent on either of the following:
 
-- The SAM Server.
+- The OpCon server.
 - The same system as the SAP Central Management Console server.
 
 ### Step 2 — SAP Business Objects Connector installation
@@ -54,7 +54,7 @@ After extraction, the root installation directory contains the following:
 | Item | Purpose |
 | ---- | ------- |
 | `boxi.exe` | Connector executable |
-| `Encrypt.exe` | Encryption utility for passwords stored in `Connector.config` |
+| `Encrypt.exe` | Utility that encodes passwords stored in `Connector.config` |
 | `Connector.config` | Connector configuration file |
 | `java\` directory | Embedded Java software (OpenJDK 11) required to run the connector |
 | `emplugins\` directory | Job subtype plug-in for Enterprise Manager |
@@ -86,23 +86,32 @@ If the new job subtype is not visible, restart Enterprise Manager using **Run as
 Configuring the SAP Business Objects Connector requires setting the required values in the `Connector.config` file. The `Connector.config` file contains the following:
 
 - The address of the Business Objects Server that the connector uses to issue requests to Business Objects.
-- Definitions for FTP and SMTP servers. The header name of each FTP and SMTP definition is used to extract the correct connection definitions.
+- Credentials for writing reports to disk.
+- Definitions for FTP servers. The header name of each FTP definition is used to extract the correct connection definitions.
 
-You can define multiple FTP or SMTP connections by changing the header value (for example, `[FTP1]` defines the connection for server1 and `[FTP2]` defines the connection for server2).
+You can define multiple FTP connections by changing the header value (for example, `[FTP1]` defines the connection for server1 and `[FTP2]` defines the connection for server2). The **Indicator** field on a job's Ftp destination selects which one to use.
 
 :::warning
-Any passwords entered into `Connector.config` must be encrypted using the `Encrypt.exe` utility provided with the connector. Plain-text passwords are not supported.
+Any passwords entered into `Connector.config` must be encoded using the `Encrypt.exe` utility provided with the connector. Do not enter passwords as plain text.
 :::
 
 ### Encrypt utility
 
-The Encrypt utility uses standard 64-bit encryption. It supports a `-v` argument and displays the encrypted value.
+The Encrypt utility supports a `-v` argument and displays the encoded value.
 
-To encrypt a value on Windows, run the following command, substituting your value for `abcdefg`:
+To encode a value on Windows, run the following command, substituting your value for `abcdefg`:
 
 ```text
 Encrypt.exe -v abcdefg
 ```
+
+:::caution
+
+Despite its name, `Encrypt.exe` **encodes** passwords rather than encrypting them. It applies no cipher and uses no key, so anyone who can read `Connector.config` can recover the original password. Encoding stops a password being read at a glance, and that is all it does.
+
+Restrict access to `Connector.config` with operating system permissions, and treat every password in it as recoverable. Use a separate account and password for each destination rather than sharing one.
+
+:::
 
 ### Connector.config configuration
 
@@ -112,14 +121,14 @@ Configure the `Connector.config` file in the installation directory by setting t
 
 | Property name | Value |
 | ------------- | ----- |
-| **CONNECTOR_NAME** | The name of the connector. This value should not be changed. |
-| **DEBUG** | If the connector supports a debug mode, you can use this property to set the connector into DEBUG mode. Value either `ON` or `OFF` (default `OFF`). |
+| **CONNECTOR_NAME** | A label for the connector. It is read at startup and has no effect on behaviour. |
+| **DEBUG** | Sets the connector into debug mode, which increases the detail written to the connector log. Value either `ON` or `OFF`. Required — the connector fails to load its configuration if this property is absent, so set it to `OFF` rather than removing it. The supplied `Connector.config` sets it to `ON`. |
 
 #### [BUSINESS OBJECTS] section
 
 | Property name | Value |
 | ------------- | ----- |
-| **BUSINESS_OBJECT_SERVER_ADDRESS** | Defines the address of the SAPBO server. This includes the port number, which is the listening port defined during SAP Business Objects installation (default `6405`). |
+| **BUSINESS_OBJECTS_SERVER_ADDRESS** | The address of the SAP Business Objects server, including the protocol scheme and the port number — for example `http://boserver:6405`. The port is the listening port defined during SAP Business Objects installation (default `6405`). The connector uses this value as the base of every web service URL, so the scheme is required. |
 | **BUSINESS_OBJECTS_DEFAULT_REPORT_FORMAT** | The default report format if the attribute `SCHEDULE-FORMAT` is not present. Valid values: `webi`, `pdf`, `xls`, or `csv`. |
 
 #### [DISK] section
@@ -129,7 +138,7 @@ Used to define a DISK connection. Contains a valid user and password that is all
 | Property name | Value |
 | ------------- | ----- |
 | **DISK_USER** | A valid user code that has the required privileges to write onto the destination disk. |
-| **DISK_USER_PASSWORD** | The password of the user. Encrypt this value using `Encrypt.exe`. |
+| **DISK_USER_PASSWORD** | The password of the user. Encode this value using `Encrypt.exe`. |
 
 #### [FTP] section
 
@@ -140,47 +149,36 @@ Used to define a connection to an FTP server. An FTP destination definition incl
 | **FTP_SERVER_NAME** | The address of the FTP server. |
 | **FTP_PORT_NUMBER** | The port used by the FTP server. |
 | **FTP_USER** | A valid user code that has the required privileges to log in to the FTP server. |
-| **FTP_USER_PASSWORD** | The password of the user. Encrypt this value using `Encrypt.exe`. |
+| **FTP_USER_PASSWORD** | The password of the user. Encode this value using `Encrypt.exe`. |
 
-#### [SMTP] section
+### Mail destinations do not use Connector.config
 
-Used to define a connection to an SMTP server. An SMTP destination definition includes this name as the first parameter of the value definition so the correct SMTP server definitions can be used (for example, `SMTP=SMTP1,..`). You can add multiple definitions by changing the header value.
+There is no SMTP section in `Connector.config`. Mail destinations are defined entirely in the job definition — the subject, the message and the recipient addresses — and the mail is sent by the SAP Business Objects server using its own configured mail settings.
 
-| Property name | Value |
-| ------------- | ----- |
-| **SMTP_DOMAIN_NAME** | The domain name associated with the SMTP server. |
-| **SMTP_SERVER_NAME** | The address of the SMTP server. |
-| **SMTP_PORT_NUMBER** | The port used by the SMTP server. |
-| **SMTP_USER** | A valid user code that has the required privileges to log in to the SMTP server. |
-| **SMTP_USER_PASSWORD** | The password of the user. Encrypt this value using `Encrypt.exe`. |
+If reports are not being delivered by email, check the mail configuration on the Business Objects server rather than the connector.
 
 ### Example Connector.config file
+
+Replace every value in angle brackets with your own, and use a **separate account and password for each destination**. Encode each password with `Encrypt.exe` before entering it.
 
 ```ini
 [CONNECTOR]
 CONNECTOR_NAME=SAP Business Objects Connector
-DEBUG=ON
+DEBUG=OFF
 
 [BUSINESS OBJECTS]
-BUSINESS_OBJECTS_SERVER_ADDRESS= VM-TEST-BOXI:6405
+BUSINESS_OBJECTS_SERVER_ADDRESS=http://<business-objects-server>:6405
 BUSINESS_OBJECTS_DEFAULT_REPORT_FORMAT=pdf
 
 [DISK]
-DISK_USER=test
-DISK_USER_PASSWORD=6233426a6232353463484d3d
+DISK_USER=<disk-user>
+DISK_USER_PASSWORD=<encoded-disk-user-password>
 
-[FTP]
-FTP_SERVER_NAME=ftpserver1
+[FTP1]
+FTP_SERVER_NAME=<ftp-server>
 FTP_PORT_NUMBER=21
-FTP_USER=test
-FTP_USER_PASSWORD=6233426a6232353463484d3d
-
-[SMTP]
-SMTP_DOMAIN_NAME=domain
-SMTP_SERVER_NAME=smtpserver1
-SMTP_PORT_NUMBER=25
-SMTP_USER=test
-SMTP_USER_PASSWORD=6233426a6232353463484d3d
+FTP_USER=<ftp-user>
+FTP_USER_PASSWORD=<encoded-ftp-user-password>
 ```
 
 ## FAQs
@@ -188,8 +186,8 @@ SMTP_USER_PASSWORD=6233426a6232353463484d3d
 **Q: Where can I install the SAP Business Objects Connector?**
 A: You can install it on a central server or on the SAP Business Objects server. The connector requires a Windows Agent on the same system because it runs as a Windows batch job.
 
-**Q: How do passwords get encrypted in `Connector.config`?**
-A: All passwords stored in `Connector.config` must be encrypted using the `Encrypt.exe` utility provided with the connector. Run `Encrypt.exe -v <value>` and place the resulting encrypted value in the configuration file.
+**Q: How do passwords get encoded in `Connector.config`?**
+A: All passwords stored in `Connector.config` must be encoded using the `Encrypt.exe` utility provided with the connector. Run `Encrypt.exe -v <value>` and place the resulting encoded value in the configuration file. The output is encoded, not encrypted, and can be reversed without a key.
 
 **Q: Why is the SAP Business Objects job subtype not visible in Enterprise Manager after I copy the plug-in?**
 A: Restart Enterprise Manager. If it is still not visible, restart Enterprise Manager using **Run as Administrator**.
@@ -203,7 +201,7 @@ A: It contains the full path to the connector installation directory and is refe
 
 > **dropins directory** — The Enterprise Manager subdirectory where the SAP Business Objects job subtype plug-in is placed so Enterprise Manager loads it on startup.
 
-> **Encrypt.exe** — The utility supplied with the connector that produces a 64-bit encrypted value for any password stored in `Connector.config`.
+> **Encrypt.exe** — The utility supplied with the connector that produces an encoded form of any password stored in `Connector.config`. Despite its name it applies no cipher and no key, so its output is reversible and the file must be protected by operating system permissions.
 
 > **SAPBOPath** — The global property that holds the full path of the SAP Business Objects Connector installation directory.
 
